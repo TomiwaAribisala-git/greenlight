@@ -41,6 +41,7 @@ curl -i -d "$BODY" localhost:4000/v1/movies
 - int*, uint*, float*, rune ⇒ JSON number
 - array, slice ⇒ JSON array
 - struct, map ⇒ JSON object
+- slice ofstucts ⇒ array of objects
 - nil pointers, interface values, slices, maps, etc. ⇒ JSON null
 - chan, func, complex* ⇒ Not supported
 - time.Time ⇒ RFC3339-format JSON string

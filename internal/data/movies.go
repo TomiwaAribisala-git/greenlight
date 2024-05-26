@@ -6,14 +6,15 @@ import (
 	"github.com/TomiwaAribisala-git/greenlight.git/internal/validator"
 )
 
+// fields in capital letter for them to be visible to Go’s encoding/json package
 type Movie struct {
 	ID        int64     `json:"id"`
 	CreatedAt time.Time `json:"-"`
 	Title     string    `json:"title"`
 	Year      int32     `json:"year,omitempty"`
-	Runtime   Runtime   `json:"runtime,string"`
+	Runtime   Runtime   `json:"runtime,omitempty"` // advanced json customization
 	Genres    []string  `json:"genres"`
-	Version   int32     `json:"version,omitempty"`
+	Version   int32     `json:"version,omitempty,string"` // the string directive only work on struct fields which have int*/uint*/float*/bool types
 }
 
 func ValidateMovie(v *validator.Validator, movie *Movie) {

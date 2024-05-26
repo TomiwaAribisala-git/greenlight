@@ -9,20 +9,29 @@ import (
 	"github.com/TomiwaAribisala-git/greenlight.git/internal/validator"
 )
 
-/*
+// — any dependency that the healthcheckHandler needs can simply be
+// included as a field in the application struct when we initialize it in main().
+
 func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "status: available")
-	fmt.Fprintf(w, "environment: %s\n", app.config.env)
-	fmt.Fprintf(w, "version: %s\n", version)
+
+	data := map[string]string{
+		"status":      "available",
+		"environment": app.config.env,
+		"version":     version,
+	}
+
+	err := app.writeJSON(w, http.StatusOK, data, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }
-*/
 
 func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
 
 	var input struct {
 		Title   string   `json:"title"` // struct fields must be in uppercase to be visible to encoding/json
 		Year    int32    `json:"year"`
-		Runtime int32    `json:"runtime"`
+		Runtime int32    `json:"runtime"` // Runtime can be adjusted to expect user input as "107 mins": see custom json decoding in runtime.go
 		Genres  []string `json:"genres"`
 	}
 
@@ -71,6 +80,6 @@ func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request)
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"movie": movie}, nil) // enveloping JSON responses
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.serverErrorResponse(w, r, err) // check this later
 	}
 }

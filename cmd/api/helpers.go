@@ -7,14 +7,18 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 )
 
-type envelope map[string]any
+// there’s no single right or wrong way to structure your JSON responses.
+type envelope map[string]any // formatting and enveloping responses
 
+// helper to read ID parameters
 func (app *application) readIDParam(r *http.Request) (int64, error) {
 	params := httprouter.ParamsFromContext(r.Context())
+
 	id, err := strconv.ParseInt(params.ByName("id"), 10, 64)
 	if err != nil || id < 1 {
 		return 0, errors.New("invalid id parameter")
@@ -22,8 +26,9 @@ func (app *application) readIDParam(r *http.Request) (int64, error) {
 	return id, nil
 }
 
+// writeJSON helper method
 func (app *application) writeJSON(w http.ResponseWriter, status int, data any, headers http.Header) error {
-	js, err := json.MarshalIndent(data, "", "\t") // atracts more memory compared to json.Marshal
+	js, err := json.MarshalIndent(data, "", "\t") // uses more memory than json.Marshal
 	if err != nil {
 		return err
 	}
@@ -43,7 +48,8 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data any, h
 
 func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 
-	// Use http.MaxBytesReader() to limit the size of the request body to 1MB.
+	// Use http.MaxBytesReader() to limit the size of the request body to 1MB
+	// and for CreateMovieHandler handler to contain only one JSON object
 	maxBytes := 1_048_576
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 
@@ -61,6 +67,7 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 		var syntaxError *json.SyntaxError
 		var unmarshalTypeError *json.UnmarshalTypeError
 		var invalidUnmarshalError *json.InvalidUnmarshalError
+		var maxBytesError *http.MaxBytesError
 
 		switch {
 		// Use the errors.As() function to check whether the error has the type
@@ -92,6 +99,22 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 		case errors.Is(err, io.EOF):
 			return errors.New("body must not be empty")
 
+		// If the JSON contains a field which cannot be mapped to the target destination
+		// then Decode() will now return an error message in the format "json: unknown
+		// field "<name>"". We check for this, extract the field name from the error,
+		// and interpolate it into our custom error message. Note that there's an open
+		// issue at https://github.com/golang/go/issues/29035 regarding turning this
+		// into a distinct error type in the future.
+		case strings.HasPrefix(err.Error(), "json: unknown field "):
+			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
+			return fmt.Errorf("body contains unknown key %s", fieldName)
+
+		// Use the errors.As() function to check whether the error has the type
+		// *http.MaxBytesError. If it does, then it means the request body exceeded our
+		// size limit of 1MB and we return a clear error message.
+		case errors.As(err, &maxBytesError):
+			return fmt.Errorf("body must not be larger than %d bytes", maxBytesError.Limit)
+
 		// A json.InvalidUnmarshalError error will be returned if we pass something
 		// that is not a non-nil pointer to Decode(). We catch this and panic,
 		// rather than returning an error to our handler. At the end of this chapter
@@ -105,5 +128,20 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 			return err
 		}
 	}
+
+	// Call Decode() again, using a pointer to an empty anonymous struct as the
+	// destination. If the request body only contained a single JSON value this will
+	// return an io.EOF error. So if we get anything else, we know that there is
+	// additional data in the request body and we return our own custom error message.
+	err = dec.Decode(&struct{}{})
+	if err != io.EOF {
+		return errors.New("body must only contain a single JSON value")
+	}
 	return nil
 }
+
+// json.SyntaxError
+// io.ErrUnexpectedEOF
+// json.UnmarshalTypeError
+// json.InvalidUnmarshalError
+// io.EOF

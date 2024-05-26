@@ -1,8 +1,12 @@
+/*
 package main
 
 import (
 	"net/http"
 )
+
+// — any dependency that the healthcheckHandler needs can simply be
+// included as a field in the application struct when we initialize it in main().
 
 func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -17,3 +21,4 @@ func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Reques
 		app.serverErrorResponse(w, r, err)
 	}
 }
+*/

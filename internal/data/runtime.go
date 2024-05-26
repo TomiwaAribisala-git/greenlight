@@ -1,3 +1,5 @@
+// Advanced JSON Customization
+
 package data
 
 import (
@@ -7,6 +9,7 @@ import (
 
 type Runtime int32
 
+// advanced json customization
 func (r Runtime) MarshalJSON() ([]byte, error) {
 	jsonValue := fmt.Sprintf("%d mins", r)
 
@@ -14,3 +17,5 @@ func (r Runtime) MarshalJSON() ([]byte, error) {
 
 	return []byte(quotedJSONValue), nil
 }
+
+// concept of custom json decoding: more on this later
