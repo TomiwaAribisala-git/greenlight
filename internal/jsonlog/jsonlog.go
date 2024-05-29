@@ -106,6 +106,6 @@ func (L *Logger) print(level Level, message string, properties map[string]string
 // We also implement a Write() method on our Logger type so that it satisfies the
 // io.Writer interface. This writes a log entry at the ERROR level with no additional
 // properties.
-func (l *Logger) Write(message []byte) (n int, err error) {
-	return l.print(LevelError, string(message), nil)
+func (L *Logger) Write(message []byte) (n int, err error) {
+	return L.print(LevelError, string(message), nil)
 }

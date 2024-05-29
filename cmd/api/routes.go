@@ -6,7 +6,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func (app *application) routes() *httprouter.Router {
+// func (app *application) routes() *httprouter.Router {}
+func (app *application) routes() http.Handler {
 
 	router := httprouter.New()
 
@@ -19,5 +20,11 @@ func (app *application) routes() *httprouter.Router {
 	router.HandlerFunc(http.MethodPatch, "/v1/movies/:id", app.updateMovieHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/movies/:id", app.deleteMovieHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
-	return router
+	return app.recoverPanic(app.rateLimit(router))
+
+	// return app.recoverPanic(router)
+	// return router
 }
+
+// case of spinning up additional goroutines from within your handlers and there is any
+// chance of a panic, you must make sure that you recover any panics from within those goroutines too.

@@ -16,6 +16,10 @@ go get github.com/lib/pq@v1
 ```
 
 ```sh
+go get golang.org/x/time/rate@latest
+```
+
+```sh
 export GREENLIGHT_DB_DSN='postgres://greenlight:pa55word@localhost:5432/greenlight?sslmode=disable'
 ```
 
@@ -128,6 +132,14 @@ xargs -I % -P8 curl -X PATCH -d '{"runtime":97}' "localhost:4000/v1/movies/4" < 
 
 ```sh
 curl localhost:4000/v1/movies
+```
+
+```sh
+for i in {1..6}; do curl http://localhost:4000/v1/healthcheck; done
+```
+
+```sh
+go run ./cmd/api/ -limiter-enabled=false
 ```
 
 ### Supported Go types to JSON type
