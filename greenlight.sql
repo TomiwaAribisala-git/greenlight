@@ -17,3 +17,5 @@ ALTER DATABASE mydb OWNER TO admin;
 SELECT * FROM schema_migrations;
 
 \d movies
+
+\d users

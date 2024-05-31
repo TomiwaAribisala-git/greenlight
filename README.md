@@ -12,11 +12,23 @@ go get github.com/julienschmidt/httprouter@v1
 ```
 
 ```sh
+go install github.com/rakyll/hey@latest
+```
+
+```sh
 go get github.com/lib/pq@v1
 ```
 
 ```sh
 go get golang.org/x/time/rate@latest
+```
+
+```sh
+go get golang.org/x/crypto/bcrypt@latest
+```
+
+```sh
+go get github.com/go-mail/mail/v2@v2
 ```
 
 ```sh
@@ -67,6 +79,14 @@ migrate -path=./migrations -database=$EXAMPLE_DSN up
 migrate -path=./migrations -database=$EXAMPLE_DSN down
 ```
 
+```sh
+migrate create -seq -ext=.sql -dir=./migrations create_users_table
+```
+
+```sh
+migrate -path=./migrations -database=$GREENLIGHT_DB_DSN up
+```
+
 ### Fixing SQL Migration Errors
 - Investigate the original error and figure out if the migration file
 which failed was partially applied.
@@ -88,10 +108,6 @@ curl -X POST localhost:4000/v1/movies
 
 ```sh
 curl localhost:4000/v1/movies/123
-```
-
-```sh
-go install github.com/rakyll/hey@latest
 ```
 
 ```sh
@@ -142,6 +158,14 @@ for i in {1..6}; do curl http://localhost:4000/v1/healthcheck; done
 go run ./cmd/api/ -limiter-enabled=false
 ```
 
+```sh
+BODY='{"name": "Alice Smith", "email": "alice@example.com", "password": "pa55word"}'
+```
+
+```sh
+curl -i -d "$BODY" localhost:4000/v1/users
+```
+
 ### Supported Go types to JSON type
 - bool ⇒ JSON boolean
 - string ⇒ JSON string
@@ -167,3 +191,7 @@ problems
 smallint, smallserial ⇒ int16 (-32768 to 32767)
 integer, serial ⇒ int32 (-2147483648 to 2147483647)
 bigint, bigserial ⇒ int64 (-9223372036854775808 to 9223372036854775807)
+
+### SMTP Server
+- [MailTrap](https://mailtrap.io/)
+- SMTP Settings: Credentials

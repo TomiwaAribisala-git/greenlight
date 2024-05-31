@@ -33,8 +33,8 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 func (app *application) rateLimit(next http.Handler) http.Handler {
 
 	limiter := rate.NewLimiter(2, 4)
-	// The function we are returning is a closure, which 'closes over' the limiter
-	// variable.
+
+	// The function we are returning is a closure, which 'closes over' the limiter variable.
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Call limiter.Allow() to see if the request is permitted, and if it's not,
 		// then we call the rateLimitExceededResponse() helper to return a 429 Too Many
