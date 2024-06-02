@@ -9,6 +9,7 @@ import (
 	"github.com/go-mail/mail/v2"
 )
 
+//go:embed templates/*
 var templateFS embed.FS
 
 type Mailer struct {
@@ -29,8 +30,8 @@ func New(host string, port int, username, password, sender string) Mailer {
 }
 
 func (m Mailer) Send(recipient, templateFile string, data any) error {
-	// Using embedded file systems
-	// //go:embed "templates" embeds the contents of the directory at internal/mailer/templates.
+	// Using embedded file systems: other use cases
+	// //go:embed "templates" embeds the contents of the directory at internal/mailer/templates
 	tmpl, err := template.New("email").ParseFS(templateFS, "templates/"+templateFile)
 	if err != nil {
 		return err
@@ -74,6 +75,19 @@ func (m Mailer) Send(recipient, templateFile string, data any) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
+	/*
+		// Try sending the email up to three times before aborting and returning the final
+		// error. We sleep for 500 milliseconds between each attempt.
+		for i := 1; i <= 3; i++ {
+		err = m.dialer.DialAndSend(msg)
+		// If everything worked, return nil.
+		if nil == err {
+		return nil
+		}
+		// If it didn't work, sleep for a short time and retry.
+		time.Sleep(500 * time.Millisecond)
+		}
+		return err
+	*/
 }

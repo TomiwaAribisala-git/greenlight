@@ -87,9 +87,24 @@ migrate create -seq -ext=.sql -dir=./migrations create_users_table
 migrate -path=./migrations -database=$GREENLIGHT_DB_DSN up
 ```
 
+```sh
+migrate create -seq -ext .sql -dir ./migrations create_tokens_table
+```
+
+```sh
+migrate -path=./migrations -database=$GREENLIGHT_DB_DSN up
+```
+
+// Creating database GIN indexes for tables on certain fields to avoid full table scans
+```sh
+migrate create -seq -ext .sql -dir ./migrations add_movies_indexes'
+```
+```sh
+migrate -path ./migrations -database $GREENLIGHT_DB_DSN up
+```
+
 ### Fixing SQL Migration Errors
-- Investigate the original error and figure out if the migration file
-which failed was partially applied.
+- Investigate the original error and figure out if the migration file which failed was partially applied.
 - Then you need to manually roll-back the partially applied migration.
 - Once that’s done, then you must also ‘force’ the version number in the schema_migrations table to the correct value.
 ```sh
@@ -150,6 +165,52 @@ xargs -I % -P8 curl -X PATCH -d '{"runtime":97}' "localhost:4000/v1/movies/4" < 
 curl localhost:4000/v1/movies
 ```
 
+// When using curl to send a request containing more than one query string
+// parameter, you must wrap the URL in quotes for it to work correctly.
+```sh
+curl "localhost:4000/v1/movies?title=moana&genres=animation,adventure&page=1&page_size=5&sort=year"
+```
+
+```sh
+curl localhost:4000/v1/movies
+```
+
+```sh
+curl "localhost:4000/v1/movies?title=black+panther"
+```
+
+```sh
+curl "localhost:4000/v1/movies?genres=adventure"
+```
+
+```sh
+curl "localhost:4000/v1/movies?title=moana&genres=animation,adventure"
+```
+
+```sh
+curl "localhost:4000/v1/movies?genres=western"
+```
+
+// Return all movies where the title includes the case-insensitive word 'panther'0.
+```sh
+curl "localhost:4000/v1/movies?title=panther"
+```
+
+// Return all movies where the title includes the case-insensitive words 'the' and'club'
+```sh
+curl "localhost:4000/v1/movies?title=the+club"
+```
+
+```sh
+curl "localhost:4000/v1/movies?sort=-title"
+```
+
+```sh
+curl "localhost:4000/v1/movies?sort=-runtime"
+```
+
+```sh
+
 ```sh
 for i in {1..6}; do curl http://localhost:4000/v1/healthcheck; done
 ```
@@ -159,11 +220,103 @@ go run ./cmd/api/ -limiter-enabled=false
 ```
 
 ```sh
+curl "localhost:4000/v1/movies?page_size=2"
+```
+
+```sh
+curl "localhost:4000/v1/movies?page_size=2&page=2"
+```
+
+```sh
+curl "localhost:4000/v1/movies?page_size=2&page=2"
+```
+
+```
 BODY='{"name": "Alice Smith", "email": "alice@example.com", "password": "pa55word"}'
 ```
 
 ```sh
 curl -i -d "$BODY" localhost:4000/v1/users
+```
+
+```sh
+BODY='{"name": "Godae Hill", "email": "godae@example.com", "password": "pa55word"}'
+```
+
+```sh
+curl -w '\nTime: %{time_total}\n' -d "$BODY" localhost:4000/v1/users
+```
+
+```sh
+BODY='{"name": "Carol Smith", "email": "carol@example.com", "password": "pa55word"}'
+```
+
+```sh
+curl -w '\nTime: %{time_total}\n' -d "$BODY" localhost:4000/v1/users
+```
+
+```sh
+BODY='{"name": "Dave Smith", "email": "dave@example.com", "password": "pa55word"}'
+```
+
+```sh
+curl -w '\nTime: %{time_total}\n' -d "$BODY" localhost:4000/v1/users
+```
+
+```sh
+BODY='{"name": "Faith Smith", "email": "faith@example.com", "password": "pa55word"}'
+```
+
+```sh
+curl -w '\nTime: %{time_total}\n' -d "$BODY" localhost:4000/v1/users
+```
+
+```sh
+curl -X PUT -d '{"token": "ZYGQTPU5PKKJRY7SFOAMKXPGQY"}' localhost:4000/v1/users/activated
+```
+
+```sh
+BODY='{"email": "alice@example.com", "password": "pa55word"}'
+```
+
+```sh
+curl -i -d "$BODY" localhost:4000/v1/tokens/authentication
+```
+
+```sh
+curl -i -H "Authorization: Bearer XXXXXXXXXXXXXXXXXXXXXXXXXX" localhost:4000/v1/healthcheck
+```
+
+```sh
+curl -i -H "Authorization: Bearer XXXXXXXXXXXXXXXXXXXXXXXXXX" localhost:4000/v1/movies/1
+```
+
+```sql
+SELECT email FROM users WHERE activated = true;
+```
+
+```sh
+BODY='{"email": "faith@example.com", "password": "pa55word"}'   // user is already activated from commands above
+```
+
+```sh
+curl -d "$BODY" localhost:4000/v1/tokens/authentication
+```
+
+```sh
+curl -H "Authorization: Bearer XXXXXXXXXXXXXXXXXXXXXXXXXX" localhost:4000/v1/movies/1
+```
+
+```sh
+curl -H "Authorization: Bearer XXXXXXXXXXXXXXXXXXXXXXXXXX" localhost:4000/v1/movies
+```
+
+```sh
+migrate create -seq -ext .sql -dir ./migrations add_permissions
+```
+
+```sh
+migrate -path ./migrations -database $GREENLIGHT_DB_DSN up
 ```
 
 ### Supported Go types to JSON type
