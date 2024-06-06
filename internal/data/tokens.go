@@ -36,7 +36,9 @@ func generateToken(userID int64, ttl time.Duration, scope string) (*Token, error
 		Scope:  scope,
 	}
 
+	// Initialize a zero-valued byte slice with a length of 16 bytes
 	randomBytes := make([]byte, 16)
+
 	// Use the Read() function from the crypto/rand package to fill the byte slice with
 	// random bytes from your operating system's CSPRNG. This will return an error if
 	// the CSPRNG fails to function correctly.

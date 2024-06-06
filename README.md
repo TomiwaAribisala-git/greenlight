@@ -308,7 +308,7 @@ curl -H "Authorization: Bearer XXXXXXXXXXXXXXXXXXXXXXXXXX" localhost:4000/v1/mov
 ```
 
 ```sh
-curl -H "Authorization: Bearer XXXXXXXXXXXXXXXXXXXXXXXXXX" localhost:4000/v1/movies
+curl -X DELETE -H "Authorization: Bearer XXXXXXXXXXXXXXXXXXXXXXXXXX" localhost:4000/v1/movies/1
 ```
 
 ```sh
@@ -317,6 +317,14 @@ migrate create -seq -ext .sql -dir ./migrations add_permissions
 
 ```sh
 migrate -path ./migrations -database $GREENLIGHT_DB_DSN up
+```
+
+```sh
+BODY='{"name": "Grace Smith", "email": "grace@example.com", "password": "pa55word"}'
+```
+
+```sh
+curl -d "$BODY" localhost:4000/v1/users
 ```
 
 ### Supported Go types to JSON type

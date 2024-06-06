@@ -58,7 +58,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Add the "movies:read" permission for the new user.
+	// Add the "movies:read" permission for the new user
 	err = app.models.Permissions.AddForUser(user.ID, "movies:read")
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -119,7 +119,6 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}()
 */
 
-// one(user) to many(tokens) relationship
 func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Parse the plaintext activation token from the request body.
 	var input struct {

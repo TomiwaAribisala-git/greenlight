@@ -4,9 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"flag"
-	"fmt"
-	"log"
-	"net/http"
 	"os"
 	"sync"
 	"time"
@@ -97,26 +94,32 @@ func main() {
 	}
 	// app.models.Movies.Insert(...)
 
-	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", cfg.port),
-		Handler: app.routes(),
-		// log.Logger instance should not use a prefix or any flags
-		// log messages of http.Server writes will be passed to Logger.Write() method, which in turn will output a log entry in JSON format at the ERROR
-		ErrorLog:     log.New(logger, "", 0),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
+	/*
+		srv := &http.Server{
+			Addr:    fmt.Sprintf(":%d", cfg.port),
+			Handler: app.routes(),
+			// log.Logger instance should not use a prefix or any flags
+			// log messages of http.Server writes will be passed to Logger.Write() method, which in turn will output a log entry in JSON format at the ERROR
+			ErrorLog:     log.New(logger, "", 0),
+			IdleTimeout:  time.Minute,
+			ReadTimeout:  10 * time.Second,
+			WriteTimeout: 30 * time.Second,
+		}
+
+		//logger.Printf("starting %s server on %s", cfg.env, srv.Addr)
+		logger.PrintInfo("starting server", map[string]string{
+			"addr": srv.Addr,
+			"env":  cfg.env,
+		})
+
+		err = srv.ListenAndServe() // = instead of := because err variable is already declared above
+		// logger.Fatal(err)
+		logger.PrintFatal(err, nil)
+	*/
+	err = app.serve()
+	if err != nil {
+		logger.PrintFatal(err, nil)
 	}
-
-	//logger.Printf("starting %s server on %s", cfg.env, srv.Addr)
-	logger.PrintInfo("starting server", map[string]string{
-		"addr": srv.Addr,
-		"env":  cfg.env,
-	})
-
-	err = srv.ListenAndServe() // = instead of := because err variable is already declared above
-	// logger.Fatal(err)
-	logger.PrintFatal(err, nil)
 }
 
 func openDB(cfg config) (*sql.DB, error) {

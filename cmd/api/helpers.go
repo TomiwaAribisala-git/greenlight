@@ -174,7 +174,8 @@ func (app *application) background(fn func()) {
 		// Execute the arbitrary function that we passed as the parameter.
 		fn()
 	}()
-	// app.wg.Wait()	// Update this later with graceful shutdown functionality
+	// Update the graceful shutdown functionality with sync.WaitGroup to wait
+	// for any background goroutines before terminating the application
 }
 
 // Filtering, Sorting and Pagination: Reading Query String Parameters

@@ -160,6 +160,9 @@ func (p *password) Matches(plaintextPassword string) (bool, error) {
 	return true, nil
 }
 
+// one(user) to many(tokens) relationship
+// UserModel.GetForToken(token) → Retrieve the user associated with a token
+// TokenModel.GetAllForUser(user) → Retrieve all tokens associated with a user
 func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error) {
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 

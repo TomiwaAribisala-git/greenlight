@@ -197,19 +197,26 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 	})
 }
 
-func (app *application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc { // it accepts and returns a http.HandlerFunc.
+func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		// Use the contextGetUser() helper that we made earlier to retrieve the user
-		// information from the request context.
 		user := app.contextGetUser(r)
 
-		// If the user is anonymous, then call the authenticationRequiredResponse() to
-		// inform the client that they should authenticate before trying again.
 		if user.IsAnonymous() {
 			app.authenticationRequiredResponse(w, r)
 			return
 		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// Checks that a user is both authenticated and activated
+func (app *application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+	// Rather than returning this http.HandlerFunc we assign it to the variable fn.
+	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Use the contextGetUser() helper that we made earlier to retrieve the user
+		// information from the request context.
+		user := app.contextGetUser(r)
 
 		// If the user is not activated, use the inactiveAccountResponse() helper to
 		// inform them that they need to activate their account.
@@ -221,8 +228,13 @@ func (app *application) requireActivatedUser(next http.HandlerFunc) http.Handler
 		// Call the next handler in the chain.
 		next.ServeHTTP(w, r)
 	})
+
+	return app.requireAuthenticatedUser(fn)
 }
 
+// many-to-many relationship
+// PermissionModel.GetAllForUser(user) → Retrieve all permissions for a user
+// UserModel.GetAllForPermission(permission) → Retrieve all users with a specific permission
 func (app *application) requirePermission(code string, next http.HandlerFunc) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		// Retrieve the user from the request context.

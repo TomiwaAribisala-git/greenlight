@@ -61,6 +61,12 @@ func (m PermissionModel) GetAllForUser(userID int64) (Permissions, error) {
 }
 
 func (m PermissionModel) AddForUser(userID int64, codes ...string) error {
+	// In this query the $1 parameter will be the user’s ID, and the $2 parameter will be a
+	// PostgreSQL array of the permission codes that we want to add for the user, like
+	// {'movies:read', 'movies:write'} .
+	// So what’s happening here is that the SELECT ... statement on the second line creates an
+	// ‘interim’ table with rows made up of the user ID and the corresponding IDsfor the permission
+	// codesin the array. Then we insert the contents of this interim table into our user_permissions table
 	query := `
 	INSERT INTO users_permissions
 	SELECT $1, permissions.id FROM permissions WHERE permissions.code = ANY($2)`
