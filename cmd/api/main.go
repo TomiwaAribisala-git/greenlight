@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"database/sql"
+	"expvar"
 	"flag"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 
@@ -86,6 +88,31 @@ func main() {
 	//logger.Printf("database connection pool established")
 	logger.PrintInfo("database connection pool established", nil)
 
+	// it’s OK to manipulate this value at runtime from your application handlers
+	//  you’ll get a runtime panic when the duplicate variable is registered
+
+	// leverage an authentication process for security:
+	// create a metrics:view permission so that only certain trusted users can access the endpoint
+	// use HTTP Basic Authentication to restrict access to the endpoint
+	// Caddy set up, we’ll restrict access to the GET /debug/vars endpoint
+
+	// Custom Metrics
+
+	expvar.NewString("version").Set(version)
+
+	// Publish the number of active goroutines.
+	expvar.Publish("goroutines", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
+	// Publish the database connection pool statistics.
+	expvar.Publish("database", expvar.Func(func() any {
+		return db.Stats()
+	}))
+	// Publish the current Unix timestamp.
+	expvar.Publish("timestamp", expvar.Func(func() any {
+		return time.Now().Unix()
+	}))
+
 	app := &application{
 		config: cfg,
 		logger: logger,
@@ -150,3 +177,11 @@ func openDB(cfg config) (*sql.DB, error) {
 
 	return db, nil
 }
+
+// Creating an end-to-end test for the GET /v1/healthcheck endpoint to verify that the
+// headers and response body are what you expect.
+// Creating a unit-test for the rateLimit() middleware to confirm that it sends a
+// 429 Too Many Requests response after a certain number of requests.
+// Creating an end-to-end integration test, using a test database instance, which confirms
+// that the authenticate() and requirePermission() middleware work together correctly
+// to allow or disallow access to specific endpoints.

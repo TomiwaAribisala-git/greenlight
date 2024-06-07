@@ -4,9 +4,11 @@ package main
 
 import (
 	"errors"
+	"expvar"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/TomiwaAribisala-git/greenlight.git/internal/data"
 	"github.com/TomiwaAribisala-git/greenlight.git/internal/validator"
@@ -260,3 +262,67 @@ func (app *application) requirePermission(code string, next http.HandlerFunc) ht
 	// Wrap this with the requireActivatedUser() middleware before returning it.
 	return app.requireActivatedUser(fn)
 }
+
+// CORS setting for all origins
+func (app *application) enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		next.ServeHTTP(w, r)
+	})
+}
+
+// Simple CORS
+// Methods: HEAD, GET or POST.
+// headers:Accept, Accept-Language, Content-Language, Content-Type
+// Content-Type: application/x-www-form-urlencoded, multipart/form-data, text/plain
+
+// CORS setting for a single trusted origin
+// w.Header().Set("Access-Control-Allow-Origin", "https://www.example.com/")
+
+// CORS setting for multiple dynamic trusted origins
+// Partial matches origin
+// Null origin
+// Authentication and CORS
+
+// Preflight CORS Requests
+// Example:
+// Origin
+// Methods: POST
+// Content-Type: application/json
+
+// Request Level Metrics: 2521 μs / 1 reqs = 2521 μs/req = 2.5 s/req
+func (app *application) metrics(next http.Handler) http.Handler {
+	// Initialize the new expvar variables when the middleware chain is first built.
+	var (
+		totalRequestsReceived           = expvar.NewInt("total_requests_received")
+		totalResponsesSent              = expvar.NewInt("total_responses_sent")
+		totalProcessingTimeMicroseconds = expvar.NewInt("total_processing_time_μs")
+	)
+
+	// The following code will be run for every request...
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Record the time that we started to process the request.
+		start := time.Now()
+
+		// Use the Add() method to increment the number of requests received by 1
+		totalRequestsReceived.Add(1)
+
+		// Call the next handler in the chain
+		next.ServeHTTP(w, r)
+
+		// On the way back up the middleware chain, increment the number of responses
+		// sent by 1.
+		totalResponsesSent.Add(1)
+
+		// Calculate the number of microseconds since we began to process the request,
+		// then increment the total processing time by this amount.
+		duration := time.Since(start).Microseconds()
+		totalProcessingTimeMicroseconds.Add(duration)
+	})
+}
+
+// To do: Recording HTTP Status Codes Metrics
+
+// in all cases, using the expvar package to collect and publish
+// the metrics gives you a great platform from which you can integrate
+// any external monitoring, alerting or visualization tools.

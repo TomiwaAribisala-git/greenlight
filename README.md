@@ -4,7 +4,19 @@ go version
 ```
 
 ```sh
+go install honnef.co/go/tools/cmd/staticcheck@latest
+```
+
+```sh
+which staticcheck
+```
+
+```sh
 go run ./cmd/api
+```
+
+```sh
+go run ./cmd/examples/cors/simple
 ```
 
 ```sh
@@ -325,6 +337,22 @@ BODY='{"name": "Grace Smith", "email": "grace@example.com", "password": "pa55wor
 
 ```sh
 curl -d "$BODY" localhost:4000/v1/users
+```
+
+```sh
+go run ./cmd/api/ -limiter-enabled=false
+```
+
+```sh
+BODY='{"email": "alice@example.com", "password": "pa55word"}'
+```
+
+```sh
+hey -d "$BODY" -m "POST" http://localhost:4000/v1/tokens/authentication
+```
+
+```sh
+curl http://localhost:4000/debug/vars
 ```
 
 ### Supported Go types to JSON type
