@@ -4,6 +4,10 @@ go version
 ```
 
 ```sh
+./bin/api -version
+```
+
+```sh
 go install honnef.co/go/tools/cmd/staticcheck@latest
 ```
 
