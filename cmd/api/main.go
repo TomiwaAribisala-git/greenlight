@@ -74,10 +74,10 @@ func main() {
 	flag.StringVar(&cfg.smtp.password, "smtp-password", "9ed24e0f21b21e", "SMTP password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Greenlight <no-reply@greenlight.tomiwa.net>", "SMTP sender")
 
-	flag.Parse()
-
 	// Create a new version boolean flag with the default value of false.
 	displayVersion := flag.Bool("version", false, "Display version and exit")
+
+	flag.Parse()
 
 	// If the version flag value is true, then print out the version number and
 	// immediately exit.
