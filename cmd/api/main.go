@@ -17,8 +17,10 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// application version number
 const version = "1.0.0"
 
+// config struct to hold configuration settings for our application
 type config struct {
 	port int
 	env  string
@@ -42,6 +44,7 @@ type config struct {
 	}
 }
 
+// application struct to hold dependencies for HTTP handlers, helpers and middleware
 type application struct {
 	config config
 	//logger *log.Logger
@@ -53,12 +56,12 @@ type application struct {
 
 func main() {
 
+	// an instance of the config struct
 	var cfg config
 
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 	flag.StringVar(&cfg.db.dsn, "db-dsn", os.Getenv("GREENLIGHT_DB_DSN"), "PostgreSQL DSN")
-	// "postgres://greenlight:pa55word@localhost/greenlight
 
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
 	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
@@ -94,7 +97,6 @@ func main() {
 		//logger.Fatal(err)
 		logger.PrintFatal(err, nil)
 	}
-
 	defer db.Close()
 	//logger.Printf("database connection pool established")
 	logger.PrintInfo("database connection pool established", nil)
@@ -130,7 +132,6 @@ func main() {
 		models: data.NewModels(db),
 		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
-	// app.models.Movies.Insert(...)
 
 	/*
 		srv := &http.Server{
@@ -160,6 +161,7 @@ func main() {
 	}
 }
 
+// The openDB() function returns a sql.DB connection pool
 func openDB(cfg config) (*sql.DB, error) {
 
 	db, err := sql.Open("postgres", cfg.db.dsn)
@@ -167,15 +169,21 @@ func openDB(cfg config) (*sql.DB, error) {
 		return nil, err
 	}
 
+	// Set the maximum number of open (in-use + idle) connections in the pool. Note that
+	// passing a value less than or equal to 0 will mean there is no limit
 	db.SetMaxOpenConns(cfg.db.maxOpenConns)
+
+	// Set the maximum number of idle connections in the pool. Again, passing a value
+	// less than or equal to 0 will mean there is no limit
 	db.SetMaxIdleConns(cfg.db.maxIdleConns)
 
-	// Use the time.ParseDuration() function to convert the idle timeout duration string
-	// to a time.Duration type.
+	// Use the time.ParseDuration() function to convert the idle timeout duration string to a time.Duration type.
 	duration, err := time.ParseDuration(cfg.db.maxIdleTime)
 	if err != nil {
 		return nil, err
 	}
+
+	// Set the maximum idle timeout
 	db.SetConnMaxIdleTime(duration)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

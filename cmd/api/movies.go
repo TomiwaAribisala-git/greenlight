@@ -40,6 +40,10 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 		Genres  []string `json:"genres"`
 	}
 
+	// If the target decode destination is a struct — like in our case —
+	// the struct fields must be exported (start with a capital letter)
+	// When decoding a JSON object into a struct, the key/value pairs in the JSON
+	// are mapped to the struct fields based on the struct tag names
 	err := app.readJSON(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
@@ -70,15 +74,15 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Set() method to add a new Location header interpolating the system-generated ID for our new movie in the URL.
+	// When sending a HTTP response, we want to include a Location header to let the client know which URL they can find the newly-created resource at
+	// Set() method to add a new Location header interpolating the system-generated ID for our new movie in the URL
 	headers := make(http.Header)
 	headers.Set("Location", fmt.Sprintf("/v1/movies/%d", movie.ID))
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"movie": movie}, headers)
+	err = app.writeJSON(w, http.StatusCreated, envelope{"movie": movie}, headers) // enveloping JSON responses
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
-
 }
 
 func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request) {
@@ -123,6 +127,7 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// advanced crud operations
 	var input struct {
 		Title   *string       `json:"title"`
 		Year    *int32        `json:"year"`
@@ -136,6 +141,12 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// If the input.Title value is nil then we know that no corresponding "title" key/
+	// value pair was provided in the JSON request body. So we move on and leave the
+	// movie record unchanged. Otherwise, we update the movie record with the new title
+	// value. Importantly, because input.Title is a now a pointer to a string, we need
+	// to dereference the pointer using the * operator to get the underlying value
+	// before assigning it to our movie record.
 	if input.Title != nil {
 		movie.Title = *input.Title
 	}
@@ -202,14 +213,23 @@ func (app *application) deleteMovieHandler(w http.ResponseWriter, r *http.Reques
 // — any dependency that the healthcheckHandler needs can simply be
 // included as a field in the application struct when we initialize it in main().
 func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
+	/*
+		data := map[string]string{
+			"status":      "available",
+			"environment": app.config.env,
+			"version":     version,
+		}
+	*/
 
-	data := map[string]string{
-		"status":      "available",
-		"environment": app.config.env,
-		"version":     version,
+	env := envelope{
+		"status": "available",
+		"system_info": map[string]string{
+			"environment": app.config.env,
+			"version":     version,
+		},
 	}
 
-	err := app.writeJSON(w, http.StatusOK, data, nil)
+	err := app.writeJSON(w, http.StatusOK, env, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

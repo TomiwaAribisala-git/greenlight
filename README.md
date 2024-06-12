@@ -1,51 +1,96 @@
-### Commands
+### Building APIs and Web Apps with Golang
+
+### General Commands
 ```sh
-go version
+make help
 ```
 
 ```sh
-./bin/api -version
+make run
 ```
 
+### Installing HTTP Router
 ```sh
-go install honnef.co/go/tools/cmd/staticcheck@latest
+go get github.com/julienschmidt/httprouter@v1
 ```
 
-```sh
-which staticcheck
-```
-
+### Run API
 ```sh
 go run ./cmd/api
 ```
 
 ```sh
-go run ./cmd/examples/cors/simple
+go run ./cmd/api -help
+```
+
+### Handlers Requests
+```sh
+curl -i localhost:4000/v1/healthcheck 
 ```
 
 ```sh
-go get github.com/julienschmidt/httprouter@v1
+curl -i -X OPTIONS localhost:4000/v1/healthcheck
+```
+
+### Show all Movies
+```sh
+curl -i -X POST localhost:4000/v1/movies
+```
+
+### Show a Movie
+```sh
+curl -i localhost:4000/v1/movies/123
+```
+
+### Supported Go types to JSON types
+- bool ⇒ JSON boolean
+- string ⇒ JSON string
+- int*, uint*, float*, rune ⇒ JSON number
+- array, slice ⇒ JSON array
+- struct, map ⇒ JSON object
+- slice ofstucts ⇒ array of objects
+- nil pointers, interface values, slices, maps, etc. ⇒ JSON null
+- chan, func, complex* ⇒ Not supported
+- time.Time ⇒ RFC3339-format JSON string
+- []byte ⇒ Base64-encoded JSON string
+- Encoding of nested objects is supported. So, for example, if you have a slice of structs in Go that will encode to an array of objects in JSON.
+- Any pointer values will encode as the value pointed to.
+- Channels, functions and complex number types cannot be encoded. If you try to do so you’ll get a json.UnsupportedTypeError error at runtime.
+
+### Creating a Movie
+```sh
+BODY='{"title":"Moana","year":2016,"runtime":107, "genres":["animation","adventure"]}'
 ```
 
 ```sh
-go install github.com/rakyll/hey@latest
+curl -i -d "$BODY" localhost:4000/v1/movies
+```
+
+### JSON type to Supported Go types 
+- JSON boolean ⇒ bool
+- JSON string ⇒ string
+- JSON number ⇒ int*, uint*, float*, rune
+- JSON array ⇒ array, slice
+- JSON object ⇒ struct, map
+
+### Installing Postgres
+```sh
+sudo apt install postgresql
 ```
 
 ```sh
-go get github.com/lib/pq@v1
+psql --version
 ```
 
 ```sh
-go get golang.org/x/time/rate@latest
+sudo -u postgres psql
 ```
 
 ```sh
-go get golang.org/x/crypto/bcrypt@latest
+psql --host=localhost --dbname=greenlight --username=greenlight
 ```
 
-```sh
-go get github.com/go-mail/mail/v2@v2
-```
+- [greenlight.sql](./greenlight.sql)
 
 ```sh
 export GREENLIGHT_DB_DSN='postgres://greenlight:pa55word@localhost:5432/greenlight?sslmode=disable'
@@ -55,6 +100,16 @@ export GREENLIGHT_DB_DSN='postgres://greenlight:pa55word@localhost:5432/greenlig
 echo $GREENLIGHT_DB_DSN
 ```
 
+```sql 
+SELECT current_user
+```
+
+### Install Database Driver
+```sh
+go get github.com/lib/pq@v1
+```
+
+### SQL Migrations
 ```sh
 curl -s https://packagecloud.io/install/repositories/golang-migrate/migrate/script.deb.sh | sudo bash
 ```
@@ -84,7 +139,11 @@ migrate -path=./migrations -database=$GREENLIGHT_DB_DSN up
 ```
 
 ```sh
-$ migrate -path=./migrations -database=$EXAMPLE_DSN goto 1
+migrate -path=./migrations -database=$EXAMPLE_DSN version
+```
+
+```sh
+migrate -path=./migrations -database=$EXAMPLE_DSN goto 1
 ```
 
 ```sh
@@ -95,54 +154,25 @@ migrate -path=./migrations -database=$EXAMPLE_DSN up
 migrate -path=./migrations -database=$EXAMPLE_DSN down
 ```
 
-```sh
-migrate create -seq -ext=.sql -dir=./migrations create_users_table
+```sql
+\dt
 ```
 
-```sh
-migrate -path=./migrations -database=$GREENLIGHT_DB_DSN up
+```sql
+SELECT * FROM schema_migrations;
 ```
 
-```sh
-migrate create -seq -ext .sql -dir ./migrations create_tokens_table
+```sql
+\d movies
 ```
 
-```sh
-migrate -path=./migrations -database=$GREENLIGHT_DB_DSN up
-```
-
-// Creating database GIN indexes for tables on certain fields to avoid full table scans
-```sh
-migrate create -seq -ext .sql -dir ./migrations add_movies_indexes'
-```
-```sh
-migrate -path ./migrations -database $GREENLIGHT_DB_DSN up
-```
-
-### Fixing SQL Migration Errors
-- Investigate the original error and figure out if the migration file which failed was partially applied.
-- Then you need to manually roll-back the partially applied migration.
-- Once that’s done, then you must also ‘force’ the version number in the schema_migrations table to the correct value.
-```sh
-migrate -path=./migrations -database=$EXAMPLE_DSN force 1
-```
-- Once you force the version, the database is considered ‘clean’ and you should be able to run migrations again without any problem.
-
-### Commands
-```sh
-curl localhost:4000/v1/healthcheck
-```
-
-```sh
-curl -X POST localhost:4000/v1/movies
-```
-
-```sh
-curl localhost:4000/v1/movies/123
-```
-
+### Database Insert A Movie
 ```sh
 BODY='{"title":"Moana","year":2016,"runtime":107, "genres":["animation","adventure"]}'
+```
+
+```sh
+curl -i -d "$BODY" localhost:4000/v1/movies
 ```
 
 ```sh
@@ -150,7 +180,15 @@ BODY='{"title":"Black Panther","year":2018,"runtime":134,"genres":["action","adv
 ```
 
 ```sh
+curl -i -d "$BODY" localhost:4000/v1/movies
+```
+
+```sh
 BODY='{"title":"Deadpool","year":2016, "runtime":108,"genres":["action","comedy"]}'
+```
+
+```sh
+curl -i -d "$BODY" localhost:4000/v1/movies
 ```
 
 ```sh
@@ -161,6 +199,16 @@ BODY='{"title":"The Breakfast Club","year":1986, "runtime":96,"genres":["drama"]
 curl -i -d "$BODY" localhost:4000/v1/movies
 ```
 
+```sql
+SELECT * FROM movies;
+```
+
+### Database Fetch A Movie
+```sh
+curl -i localhost:4000/v1/movies/2
+```
+
+### Database PUT Update A Movie
 ```sh
 BODY='{"title":"Black Panther","year":2018,"runtime":134,"genres":["sci-fi","action","adventure"]}'
 ```
@@ -169,28 +217,33 @@ BODY='{"title":"Black Panther","year":2018,"runtime":134,"genres":["sci-fi","act
 curl -X PUT -d "$BODY" localhost:4000/v1/movies/2
 ```
 
+### Database PATCH Update A Movie
 ```sh
 curl -X PATCH -d '{"year": 1985}' localhost:4000/v1/movies/4
 ```
 
+### Database Concurrent Update A Movie
 ```sh
 xargs -I % -P8 curl -X PATCH -d '{"runtime":97}' "localhost:4000/v1/movies/4" < <(printf '%s\n' {1..8})
 ```
 
+### Database Delete A Movie
 ```sh
-curl localhost:4000/v1/movies
+curl -X DELETE localhost:4000/v1/movies/3
 ```
 
-// When using curl to send a request containing more than one query string
-// parameter, you must wrap the URL in quotes for it to work correctly.
+### Database Filter Request
+- When using curl to send a request containing more than one query string parameter, you must wrap the URL in quotes for it to work correctly.
 ```sh
 curl "localhost:4000/v1/movies?title=moana&genres=animation,adventure&page=1&page_size=5&sort=year"
 ```
 
+### Database Listing Data
 ```sh
 curl localhost:4000/v1/movies
 ```
 
+### Database Filtering Lists
 ```sh
 curl "localhost:4000/v1/movies?title=black+panther"
 ```
@@ -203,20 +256,24 @@ curl "localhost:4000/v1/movies?genres=adventure"
 curl "localhost:4000/v1/movies?title=moana&genres=animation,adventure"
 ```
 
-```sh
-curl "localhost:4000/v1/movies?genres=western"
-```
-
-// Return all movies where the title includes the case-insensitive word 'panther'0.
+### Database Full Text Search
 ```sh
 curl "localhost:4000/v1/movies?title=panther"
 ```
 
-// Return all movies where the title includes the case-insensitive words 'the' and'club'
 ```sh
 curl "localhost:4000/v1/movies?title=the+club"
 ```
 
+### Database GIN Indexes
+```sh
+migrate create -seq -ext .sql -dir ./migrations add_movies_indexes'
+```
+```sh
+migrate -path ./migrations -database $GREENLIGHT_DB_DSN up
+```
+
+### Database Sorting Data
 ```sh
 curl "localhost:4000/v1/movies?sort=-title"
 ```
@@ -225,7 +282,28 @@ curl "localhost:4000/v1/movies?sort=-title"
 curl "localhost:4000/v1/movies?sort=-runtime"
 ```
 
+### Database Paginating Lists
 ```sh
+curl "localhost:4000/v1/movies?page_size=2"
+```
+
+```sh
+curl "localhost:4000/v1/movies?page_size=2&page=2"
+```
+
+### Returning Pagination Metadata
+```sh
+curl "localhost:4000/v1/movies?page=1&page_size=2"
+```
+
+```sh
+$ curl localhost:4000/v1/movies?genres=adventure
+```
+
+### Rate Limiter
+```sh
+go get golang.org/x/time/rate@latest
+```
 
 ```sh
 for i in {1..6}; do curl http://localhost:4000/v1/healthcheck; done
@@ -235,19 +313,22 @@ for i in {1..6}; do curl http://localhost:4000/v1/healthcheck; done
 go run ./cmd/api/ -limiter-enabled=false
 ```
 
+### User Model Setup And Regristration
 ```sh
-curl "localhost:4000/v1/movies?page_size=2"
+migrate create -seq -ext=.sql -dir=./migrations create_users_table
 ```
 
 ```sh
-curl "localhost:4000/v1/movies?page_size=2&page=2"
+migrate -path=./migrations -database=$GREENLIGHT_DB_DSN up
 ```
 
+### Encrypting User Passwords
 ```sh
-curl "localhost:4000/v1/movies?page_size=2&page=2"
+go get golang.org/x/crypto/bcrypt@latest
 ```
 
-```
+### Regristering New Users
+```sh
 BODY='{"name": "Alice Smith", "email": "alice@example.com", "password": "pa55word"}'
 ```
 
@@ -255,6 +336,21 @@ BODY='{"name": "Alice Smith", "email": "alice@example.com", "password": "pa55wor
 curl -i -d "$BODY" localhost:4000/v1/users
 ```
 
+### Install Mail Package
+```sh
+go get github.com/go-mail/mail/v2@v2
+```
+
+### Send Users Emails
+```sh
+BODY='{"name": "Bob Jones", "email": "bob@example.com", "password": "pa55word"}'
+```
+
+```sh
+curl -w '\nTime: %{time_total}\n' -d "$BODY" localhost:4000/v1/users
+```
+
+### Send Background Emails
 ```sh
 BODY='{"name": "Godae Hill", "email": "godae@example.com", "password": "pa55word"}'
 ```
@@ -279,6 +375,16 @@ BODY='{"name": "Dave Smith", "email": "dave@example.com", "password": "pa55word"
 curl -w '\nTime: %{time_total}\n' -d "$BODY" localhost:4000/v1/users
 ```
 
+### Activate User: Set up Tokens Database Table
+```sh
+migrate create -seq -ext .sql -dir ./migrations create_tokens_table
+```
+
+```sh
+migrate -path=./migrations -database=$GREENLIGHT_DB_DSN up
+```
+
+### Register User: Send Activation Token
 ```sh
 BODY='{"name": "Faith Smith", "email": "faith@example.com", "password": "pa55word"}'
 ```
@@ -287,32 +393,84 @@ BODY='{"name": "Faith Smith", "email": "faith@example.com", "password": "pa55wor
 curl -w '\nTime: %{time_total}\n' -d "$BODY" localhost:4000/v1/users
 ```
 
+### Activate User with Email Activation Token
 ```sh
 curl -X PUT -d '{"token": "ZYGQTPU5PKKJRY7SFOAMKXPGQY"}' localhost:4000/v1/users/activated
 ```
 
+### Generating Authentication Token
 ```sh
-BODY='{"email": "alice@example.com", "password": "pa55word"}'
+BODY='{"email": "alice@example.com", "password": "pa55word"'
 ```
 
 ```sh
 curl -i -d "$BODY" localhost:4000/v1/tokens/authentication
 ```
 
+### Authenticate Authentication Token with Authorization Header
+```sh
+curl -d '{"email": "alice@example.com", "password": "pa55word"}' localhost:4000/v1/tokens/authentication
+```
+
 ```sh
 curl -i -H "Authorization: Bearer XXXXXXXXXXXXXXXXXXXXXXXXXX" localhost:4000/v1/healthcheck
+```
+
+### Authenticate Authentication Token with Authorization Header of Activated User
+```sql
+SELECT email FROM users WHERE activated = true;
+```
+
+```sh
+BODY='{"email": "faith@example.com", "password": "pa55word"}'
 ```
 
 ```sh
 curl -i -H "Authorization: Bearer XXXXXXXXXXXXXXXXXXXXXXXXXX" localhost:4000/v1/movies/1
 ```
 
-```sql
-SELECT email FROM users WHERE activated = true;
+### Permissions SQL Migrations
+```sh
+migrate create -seq -ext .sql -dir ./migrations add_permissions
 ```
 
 ```sh
-BODY='{"email": "faith@example.com", "password": "pa55word"}'   // user is already activated from commands above
+migrate -path ./migrations -database $GREENLIGHT_DB_DSN up
+```
+
+### Set Read/Write Permissions for a User and give access
+```sql
+-- Set the activated field for alice@example.com to true.
+UPDATE users SET activated = true WHERE email = 'alice@example.com';
+```
+
+```sql
+-- Give all users the 'movies:read' permission
+INSERT INTO users_permissions
+SELECT id, (SELECT id FROM permissions WHERE code = 'movies:read') FROM users;
+```
+
+```sql
+-- Give faith@example.com the 'movies:write' permission
+INSERT INTO users_permissions
+    VALUES (
+    (SELECT id FROM users WHERE email = 'faith@example.com'),
+    (SELECT id FROM permissions WHERE code = 'movies:write')
+);
+```
+
+```sql
+-- List all activated users and their permissions.
+SELECT email, array_agg(permissions.code) as permissions
+FROM permissions
+INNER JOIN users_permissions ON users_permissions.permission_id = permissions.id
+INNER JOIN users ON users_permissions.user_id = users.id
+WHERE users.activated = true
+GROUP BY email;
+```
+
+```sh
+BODY='{"email": "alice@example.com", "password": "pa55word"}'
 ```
 
 ```sh
@@ -328,19 +486,59 @@ curl -X DELETE -H "Authorization: Bearer XXXXXXXXXXXXXXXXXXXXXXXXXX" localhost:4
 ```
 
 ```sh
-migrate create -seq -ext .sql -dir ./migrations add_permissions
+BODY='{"email": "faith@example.com", "password": "pa55word"}' 
 ```
 
 ```sh
-migrate -path ./migrations -database $GREENLIGHT_DB_DSN up
+curl -d "$BODY" localhost:4000/v1/tokens/authentication
 ```
 
+```sh
+curl -H "Authorization: Bearer XXXXXXXXXXXXXXXXXXXXXXXXXX" localhost:4000/v1/movies/1
+```
+
+```sh
+curl -X DELETE -H "Authorization: Bearer XXXXXXXXXXXXXXXXXXXXXXXXXX" localhost:4000/v1/movies/1
+```
+
+### Grant Permissions to New User which registers an account
 ```sh
 BODY='{"name": "Grace Smith", "email": "grace@example.com", "password": "pa55word"}'
 ```
 
 ```sh
 curl -d "$BODY" localhost:4000/v1/users
+```
+
+```sql
+SELECT email, code FROM users
+INNER JOIN users_permissions ON users.id = users_permissions.user_id
+INNER JOIN permissions ON users_permissions.permission_id = permissions.id
+WHERE users.email = 'grace@example.com';
+```
+
+### Activating CORS
+```sh
+go run ./cmd/examples/cors/simple
+```
+
+### Makefile Quality Control
+```sh
+go install honnef.co/go/tools/cmd/staticcheck@latest
+```
+
+```sh
+which staticcheck
+```
+
+### Display binary version number
+```sh
+./bin/api -version
+```
+
+### Basic Load Tests
+```sh
+go install github.com/rakyll/hey@latest
 ```
 
 ```sh
@@ -355,36 +553,8 @@ BODY='{"email": "alice@example.com", "password": "pa55word"}'
 hey -d "$BODY" -m "POST" http://localhost:4000/v1/tokens/authentication
 ```
 
+### Monitoring Metrics
 ```sh
 curl http://localhost:4000/debug/vars
 ```
 
-### Supported Go types to JSON type
-- bool ⇒ JSON boolean
-- string ⇒ JSON string
-- int*, uint*, float*, rune ⇒ JSON number
-- array, slice ⇒ JSON array
-- struct, map ⇒ JSON object
-- slice ofstucts ⇒ array of objects
-- nil pointers, interface values, slices, maps, etc. ⇒ JSON null
-- chan, func, complex* ⇒ Not supported
-- time.Time ⇒ RFC3339-format JSON string
-- []byte ⇒ Base64-encoded JSON string
-
-### JSON type to Supported Go types 
-- JSON boolean ⇒ bool
-- JSON string ⇒ string
-- JSON number ⇒ int*, uint*, float*, rune
-- JSON array ⇒ array, slice
-- JSON object ⇒ struct, map
-
-### PostgreSQL and Go Types
-- It’s generally sensible to align your Go and database integer types to avoid overflows or other compatibility
-problems
-smallint, smallserial ⇒ int16 (-32768 to 32767)
-integer, serial ⇒ int32 (-2147483648 to 2147483647)
-bigint, bigserial ⇒ int64 (-9223372036854775808 to 9223372036854775807)
-
-### SMTP Server
-- [MailTrap](https://mailtrap.io/)
-- SMTP Settings: Credentials

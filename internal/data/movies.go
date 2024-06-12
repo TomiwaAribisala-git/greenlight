@@ -10,7 +10,7 @@ import (
 	"github.com/lib/pq"
 )
 
-// fields in capital letter for them to be visible to Go encoding/json package
+// fields in capital letter for them to be exported(visible) to Go encoding/json package
 type Movie struct {
 	ID        int64     `json:"id"`
 	CreatedAt time.Time `json:"-"`
@@ -23,59 +23,10 @@ type Movie struct {
 
 // the fields and types in the movie struct above is analogous to the fields and types of the database migrations table
 
+// Define a MovieModel struct type which wraps a sql.DB connection pool
 type MovieModel struct {
 	DB *sql.DB
 }
-
-/*
-func (m MovieModel) GetAll(title string, year int32, runtime Runtime, genres []string) ([]*Movie, error) {
-
-	query := `
-	SELECT id, created_at, title, year, runtime, genres, version
-	FROM movies
-	ORDER BY id`
-
-	// Create a context with a 3-second timeout.
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	rows, err := m.DB.QueryContext(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	movies := []*Movie{}
-
-	for rows.Next() {
-
-		var movie Movie
-
-		err := rows.Scan(
-			&movie.ID,
-			&movie.CreatedAt,
-			&movie.Title,
-			&movie.Year,
-			&movie.Runtime,
-			pq.Array(&movie.Genres),
-			&movie.Version,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		movies = append(movies, &movie)
-	}
-
-	// When the rows.Next() loop has finished, call rows.Err() to retrieve any error
-	// that was encountered during the iteration.
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	// If everything went OK, then return the slice of movies.
-	return movies, nil
-}
-*/
 
 func (m MovieModel) Insert(movie *Movie) error {
 	query := `
@@ -83,6 +34,8 @@ func (m MovieModel) Insert(movie *Movie) error {
 	VALUES ($1, $2, $3, $4)
 	RETURNING id, created_at, version`
 
+	// You can also use the pq.Array() adapter function in the same way with []bool,
+	// []byte, []int32, []int64, []float32 and []float64 slices
 	args := []any{movie.Title, movie.Year, movie.Runtime, pq.Array(movie.Genres)}
 
 	// Create a context with a 3-second timeout.
@@ -94,6 +47,10 @@ func (m MovieModel) Insert(movie *Movie) error {
 }
 
 func (m MovieModel) Get(id int64) (*Movie, error) {
+	// smallint, smallserial int16
+	// integer, serial int32
+	// bigint, bigserial int64
+
 	if id < 1 {
 		return nil, ErrRecordNotFound
 	}
@@ -187,6 +144,9 @@ func (m MovieModel) Delete(id int64) error {
 		return err
 	}
 
+	// If no rows were affected, we know that the movies table didn't contain a record
+	// with the provided ID at the moment we tried to delete it. In that case we
+	// return an ErrRecordNotFound error
 	if rowsAffected == 0 {
 		return ErrRecordNotFound
 	}
@@ -363,3 +323,53 @@ func ValidateMovie(v *validator.Validator, movie *Movie) {
 	v.Check(len(movie.Genres) <= 5, "genres", "must not contain more than 5 genres")
 	v.Check(validator.Unique(movie.Genres), "genres", "must not contain duplicate values")
 }
+
+/*
+func (m MovieModel) GetAll(title string, year int32, runtime Runtime, genres []string) ([]*Movie, error) {
+
+	query := `
+	SELECT id, created_at, title, year, runtime, genres, version
+	FROM movies
+	ORDER BY id`
+
+	// Create a context with a 3-second timeout.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	movies := []*Movie{}
+
+	for rows.Next() {
+
+		var movie Movie
+
+		err := rows.Scan(
+			&movie.ID,
+			&movie.CreatedAt,
+			&movie.Title,
+			&movie.Year,
+			&movie.Runtime,
+			pq.Array(&movie.Genres),
+			&movie.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		movies = append(movies, &movie)
+	}
+
+	// When the rows.Next() loop has finished, call rows.Err() to retrieve any error
+	// that was encountered during the iteration.
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	// If everything went OK, then return the slice of movies.
+	return movies, nil
+}
+*/

@@ -14,7 +14,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// there’s no single right or wrong way to structure your JSON responses.
+// there’s no single right or wrong way to structure your JSON responses
+// When we always envelope the data returned by our API, then we mitigatea security
+// vulnerability in older browsers which can arise if you return a JSON array as a response
 type envelope map[string]any // formatting and enveloping responses
 
 // helper to read ID parameters
@@ -38,18 +40,27 @@ func (app *application) readIDParam(r *http.Request) (int64, error) {
 }
 
 // writeJSON helper method
-func (app *application) writeJSON(w http.ResponseWriter, status int, data any, headers http.Header) error {
+func (app *application) writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
+	// Go supports encoding many other native types, check README file
+
 	js, err := json.MarshalIndent(data, "", "\t") // uses more memory than json.Marshal
 	if err != nil {
 		return err
 	}
 
+	// Append a newline to make it easier to view in terminal applications.
 	js = append(js, '\n')
 
+	// At this point, we know that we won't encounter any more errors before writing the
+	// response, so it's safe to add any headers that we want to include. We loop
+	// through the header map and add each header to the http.ResponseWriter header map.
+	// Note that it's OK if the provided header map is nil. Go doesn't throw an error
+	// if you try to range over (or generally, read from) a nil map.
 	for key, value := range headers {
 		w.Header()[key] = value
 	}
 
+	// Add the "Content-Type: application/json" header, then write the status code and JSON response
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write(js)
@@ -68,7 +79,7 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 	// Initialize the json.Decoder, and call the DisallowUnknownFields() method on it
 	// before decoding. This means that if the JSON from the client now includes any
 	// field which cannot be mapped to the target destination, the decoder will return
-	// an error instead of just ignoring the field.
+	// an error instead of just ignoring the field
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
@@ -164,6 +175,7 @@ func (app *application) background(fn func()) {
 	// Launch a background goroutine.
 	go func() {
 		defer app.wg.Done()
+
 		// Recover any panic.
 		defer func() {
 			if err := recover(); err != nil {
@@ -185,8 +197,8 @@ func (app *application) background(fn func()) {
 func (app *application) readString(qs url.Values, key string, defaultValue string) string {
 	// Extract the value for a given key from the query string. If no key exists this
 	// will return the empty string "".
-
 	s := qs.Get(key)
+
 	// If no key exists (or the value is empty) then return the default value.
 	if s == "" {
 		return defaultValue

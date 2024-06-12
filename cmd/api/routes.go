@@ -9,7 +9,7 @@ import (
 
 // func (app *application) routes() *httprouter.Router {}
 func (app *application) routes() http.Handler {
-
+	// Initialize a new httprouter router instance
 	router := httprouter.New()
 
 	// Routing errors: Any error messages that our own API handlers send will now be well-formed JSON responses
@@ -45,14 +45,10 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", app.createLoginAuthenticationTokenHandler)
 
-	// return app.recoverPanic(router)
-	// return router
-
 	router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
 
 	return app.metrics(app.recoverPanic(app.enableCORS(app.rateLimit(app.authenticate(router)))))
 
+	// return app.recoverPanic(router)
+	// return router
 }
-
-// case of spinning up additional goroutines from within your handlers and there is any
-// chance of a panic, you must make sure that you recover any panics from within those goroutines too.
